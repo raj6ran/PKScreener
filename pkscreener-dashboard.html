@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKScreener — Workflow Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #00d4aa;
+  --accent2: #3b82f6;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --success: #10b981;
+  --purple: #a78bfa;
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+.wrap { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 0 24px 80px; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 32px;
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 14px; font-weight: 700; color: #000;
+}
+.logo-text { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--text); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.gh-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); font-size: 12px; padding: 7px 14px;
+  border-radius: 6px; cursor: pointer; text-decoration: none;
+  font-family: var(--sans); transition: border-color 0.2s;
+}
+.gh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.live-label { font-size: 11px; color: var(--success); }
+
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 32px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden;
+}
+.stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat.s-green::before { background: var(--success); }
+.stat.s-blue::before { background: var(--accent2); }
+.stat.s-teal::before { background: var(--accent); }
+.stat.s-purple::before { background: var(--purple); }
+.stat.s-amber::before { background: var(--warn); }
+.stat.s-red::before { background: var(--danger); }
+.stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-val { font-size: 26px; font-weight: 600; font-family: var(--mono); }
+.stat.s-green .stat-val { color: var(--success); }
+.stat.s-blue .stat-val { color: var(--accent2); }
+.stat.s-teal .stat-val { color: var(--accent); }
+.stat.s-purple .stat-val { color: var(--purple); }
+.stat.s-amber .stat-val { color: var(--warn); }
+.stat.s-red .stat-val { color: var(--danger); }
+
+.main { display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: start; }
+.sidebar { position: sticky; top: 24px; }
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; padding: 0 4px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; color: var(--muted); margin-bottom: 2px;
+  transition: all 0.15s; border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(0,212,170,0.08); border-color: rgba(0,212,170,0.2); color: var(--accent); }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.nav-count { margin-left: auto; font-size: 11px; font-family: var(--mono); background: var(--surface2); padding: 2px 7px; border-radius: 10px; }
+
+.quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.quick-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 12px; margin-bottom: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; cursor: pointer; font-size: 12px;
+  color: var(--text); font-family: var(--sans); text-align: left;
+  text-decoration: none; transition: all 0.15s;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+.quick-btn:last-child { margin-bottom: 0; }
+.qb-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+
+.check-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.check-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.check-item:last-child { margin-bottom: 0; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; font-size: 11px;
+  cursor: pointer; transition: all 0.15s;
+}
+.check-box.done { background: rgba(16,185,129,0.15); border: 1px solid var(--success); color: var(--success); }
+.check-box.todo { background: var(--surface2); border: 1px solid var(--border2); color: transparent; }
+.check-box.todo:hover { border-color: var(--accent); }
+.check-label { font-size: 12px; line-height: 1.5; color: var(--text); }
+.check-label.done-text { color: var(--muted); text-decoration: line-through; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.tab { padding: 10px 16px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.content-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.content-title { font-size: 15px; font-weight: 500; color: var(--text); }
+.search-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 7px; padding: 7px 12px; font-size: 12px;
+  color: var(--text); font-family: var(--sans); width: 200px; outline: none;
+}
+.search-box:focus { border-color: var(--accent); }
+.search-box::placeholder { color: var(--muted); }
+
+.sec-header {
+  display: flex; align-items: center; gap: 10px;
+  margin: 24px 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.sec-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.sec-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.sec-count { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-left: auto; }
+
+.wf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wf-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; cursor: pointer;
+  transition: all 0.2s; position: relative; overflow: hidden;
+  text-decoration: none; display: block;
+}
+.wf-card::after {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+.wf-card.cat-scan::after { background: var(--accent2); }
+.wf-card.cat-bot::after { background: var(--purple); }
+.wf-card.cat-data::after { background: var(--accent); }
+.wf-card.cat-build::after { background: var(--warn); }
+.wf-card.cat-util::after { background: var(--muted); }
+.wf-card:hover { border-color: var(--border2); transform: translateY(-1px); background: var(--surface2); }
+.wf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.wf-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.wf-badges { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-family: var(--mono); white-space: nowrap; }
+.badge-scan { background: rgba(59,130,246,0.15); color: var(--accent2); border: 1px solid rgba(59,130,246,0.2); }
+.badge-bot { background: rgba(167,139,250,0.15); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+.badge-data { background: rgba(0,212,170,0.12); color: var(--accent); border: 1px solid rgba(0,212,170,0.2); }
+.badge-build { background: rgba(245,158,11,0.12); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+.badge-util { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.2); }
+.badge-high { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.badge-med { background: rgba(245,158,11,0.1); color: var(--warn); border: 1px solid rgba(245,158,11,0.15); }
+.wf-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.wf-footer { display: flex; align-items: center; justify-content: space-between; }
+.wf-schedule { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.wf-run {
+  font-size: 11px; padding: 5px 12px;
+  background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.2);
+  color: var(--accent); border-radius: 5px; pointer-events: none;
+}
+
+.secrets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.secret-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+}
+.secret-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.secret-status.set { background: var(--success); }
+.secret-status.missing { background: var(--danger); }
+.secret-status.optional { background: var(--warn); }
+.secret-name { font-size: 12px; font-family: var(--mono); color: var(--text); }
+.secret-note { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.secret-tag { margin-left: auto; font-size: 10px; padding: 2px 7px; border-radius: 8px; white-space: nowrap; }
+.secret-tag.set { background: rgba(16,185,129,0.1); color: var(--success); }
+.secret-tag.missing { background: rgba(239,68,68,0.1); color: var(--danger); }
+.secret-tag.optional { background: rgba(245,158,11,0.1); color: var(--warn); }
+
+.steps-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 12px; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.card-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+.step { display: flex; gap: 14px; margin-bottom: 18px; }
+.step:last-child { margin-bottom: 0; }
+.step-num {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);
+  color: var(--accent); font-size: 12px; font-family: var(--mono); font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-body { flex: 1; }
+.step-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.step-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.step-code {
+  margin-top: 8px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 9px 12px;
+  font-family: var(--mono); font-size: 11px; color: var(--accent); word-break: break-all;
+}
+.run-link {
+  display: inline-block; margin-top: 8px; font-size: 11px; padding: 5px 12px;
+  border-radius: 5px; text-decoration: none; transition: all 0.15s;
+}
+.run-link.teal { background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.2); color: var(--accent); }
+.run-link.blue { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); color: var(--accent2); }
+.run-link.amber { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--warn); }
+
+.tg-test { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.input-field {
+  flex: 1; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; padding: 9px 12px; font-size: 12px;
+  color: var(--text); font-family: var(--mono); outline: none;
+}
+.input-field:focus { border-color: var(--accent); }
+.input-field::placeholder { color: var(--muted); }
+.test-btn {
+  padding: 9px 18px; background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.3); color: var(--accent);
+  border-radius: 7px; cursor: pointer; font-size: 12px;
+  font-family: var(--sans); font-weight: 500; white-space: nowrap; transition: all 0.15s;
+}
+.test-btn:hover { background: rgba(0,212,170,0.2); }
+.test-result {
+  padding: 10px 14px; border-radius: 7px; font-size: 12px;
+  font-family: var(--mono); margin-top: 8px; display: none;
+}
+.test-result.ok { background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.test-result.err { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+@media(max-width:900px) {
+  .stats { grid-template-columns: repeat(3,1fr); }
+  .main { grid-template-columns: 1fr; }
+  .wf-grid { grid-template-columns: 1fr; }
+  .secrets-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">PK</div>
+    <div>
+      <div class="logo-text">PKScreener Dashboard</div>
+      <div class="logo-sub">raj6ran/PKScreener &nbsp;·&nbsp; NSE India Stock Screener &nbsp;·&nbsp; 29 workflows</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="live-dot"></div>
+      <span class="live-label">Actions enabled</span>
+    </div>
+    <a class="gh-btn" href="https://github.com/raj6ran/PKScreener/actions" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Open GitHub
+    </a>
+    <button class="gh-btn" onclick="downloadPage()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Save as HTML
+    </button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat s-teal"><div class="stat-label">Total workflows</div><div class="stat-val">29</div></div>
+  <div class="stat s-blue"><div class="stat-label">Scan workflows</div><div class="stat-val">8</div></div>
+  <div class="stat s-green"><div class="stat-label">Data pipelines</div><div class="stat-val">7</div></div>
+  <div class="stat s-purple"><div class="stat-label">Bot & alerts</div><div class="stat-val">4</div></div>
+  <div class="stat s-amber"><div class="stat-label">Secrets set</div><div class="stat-val">8</div></div>
+  <div class="stat s-red"><div class="stat-label">Still missing</div><div class="stat-val">2</div></div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Filter workflows</div>
+      <div class="nav-item active" onclick="filterCat('all',this)">
+        <div class="nav-dot" style="background:var(--text)"></div> All workflows <span class="nav-count">29</span>
+      </div>
+      <div class="nav-item" onclick="filterCat('scan',this)">
+        <div class="nav-dot" style="background:var(--accent2)"></div> Stock scans <span class="nav-count">8</span>
+      </div>
+      <div class="nav-item" onclick="filterCat('data',this)">
+        <div class="nav-dot" style="background:var(--accent)"></div> Data pipelines <span class="nav-count">7</span>
+      </div>
+      <div class="nav-item" onclick="filterCat('bot',this)">
+        <div class="nav-dot" style="background:var(--purple)"></div> Bot & alerts <span class="nav-count">4</span>
+      </div>
+      <div class="nav-item" onclick="filterCat('build',this)">
+        <div class="nav-dot" style="background:var(--warn)"></div> Build & CI <span class="nav-count">7</span>
+      </div>
+      <div class="nav-item" onclick="filterCat('util',this)">
+        <div class="nav-dot" style="background:var(--muted)"></div> Utilities <span class="nav-count">3</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Quick actions</div>
+      <div class="quick-card">
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions/workflows/w9-workflow-download-data.yml" target="_blank">
+          <div class="qb-icon" style="background:rgba(0,212,170,0.1)">⬇</div> Download stock data
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions/workflows/w-data-warmup.yml" target="_blank">
+          <div class="qb-icon" style="background:rgba(0,212,170,0.08)">🔥</div> Warm up data cache
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions/workflows/w4-workflow-prod-scans_1.yml" target="_blank">
+          <div class="qb-icon" style="background:rgba(59,130,246,0.1)">📈</div> Nifty AI prediction
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions/workflows/w7-workflow-prod-scans-trigger.yml" target="_blank">
+          <div class="qb-icon" style="background:rgba(245,158,11,0.1)">⚡</div> Trigger all scans
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions/workflows/w3-workflow-bot.yml" target="_blank">
+          <div class="qb-icon" style="background:rgba(167,139,250,0.1)">🤖</div> Start Telegram bot
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/settings/secrets/actions" target="_blank">
+          <div class="qb-icon" style="background:rgba(239,68,68,0.1)">🔑</div> Manage secrets
+        </a>
+        <a class="quick-btn" href="https://github.com/raj6ran/PKScreener/actions" target="_blank">
+          <div class="qb-icon" style="background:rgba(107,114,128,0.1)">📋</div> View all runs
+        </a>
+        <a class="quick-btn" href="https://t.me/RAJESH_ALGO_bot" target="_blank">
+          <div class="qb-icon" style="background:rgba(0,212,170,0.08)">💬</div> Open Telegram bot
+        </a>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Setup checklist</div>
+      <div class="check-card">
+        <div class="check-item">
+          <div class="check-box done" onclick="toggleCheck(this)">✓</div>
+          <div><div class="check-label done-text">Enable GitHub Actions</div><div style="font-size:11px;color:var(--muted)">Actions tab → enable</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box done" onclick="toggleCheck(this)">✓</div>
+          <div><div class="check-label done-text">Create Telegram bot</div><div style="font-size:11px;color:var(--muted)">@BotFather → /newbot</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box done" onclick="toggleCheck(this)">✓</div>
+          <div><div class="check-label done-text">Set TOKEN secret</div><div style="font-size:11px;color:var(--muted)">Bot API token added</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box done" onclick="toggleCheck(this)">✓</div>
+          <div><div class="check-label done-text">Set CHAT_ID = 880173941</div><div style="font-size:11px;color:var(--muted)">Your Telegram chat ID</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box done" onclick="toggleCheck(this)">✓</div>
+          <div><div class="check-label done-text">SUBSCRIPTION_ENABLED = 0</div><div style="font-size:11px;color:var(--muted)">Free tier enabled</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box todo" onclick="toggleCheck(this)"></div>
+          <div><div class="check-label">Add CI_PAT secret</div><div style="font-size:11px;color:var(--muted)">GitHub Personal Access Token</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box todo" onclick="toggleCheck(this)"></div>
+          <div><div class="check-label">Test Telegram (Setup tab)</div><div style="font-size:11px;color:var(--muted)">Verify bot delivery</div></div>
+        </div>
+        <div class="check-item">
+          <div class="check-box todo" onclick="toggleCheck(this)"></div>
+          <div><div class="check-label">Run first scan (w4)</div><div style="font-size:11px;color:var(--muted)">Nifty AI prediction</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('workflows',this)">All Workflows</div>
+      <div class="tab" onclick="switchTab('secrets',this)">Secrets & Config</div>
+      <div class="tab" onclick="switchTab('setup',this)">Setup & Test</div>
+      <div class="tab" onclick="switchTab('order',this)">Run Order</div>
+    </div>
+
+    <!-- WORKFLOWS TAB -->
+    <div class="tab-content active" id="tab-workflows">
+      <div class="content-header">
+        <div class="content-title" id="wf-title">All workflows (29)</div>
+        <input class="search-box" placeholder="Search workflows..." oninput="searchWF(this.value)" />
+      </div>
+      <div id="wf-output"></div>
+    </div>
+
+    <!-- SECRETS TAB -->
+    <div class="tab-content" id="tab-secrets">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+        Add or update secrets at <a href="https://github.com/raj6ran/PKScreener/settings/secrets/actions" target="_blank" style="color:var(--accent)">Settings → Secrets → Actions ↗</a>
+      </div>
+      <div class="secrets-grid" id="secrets-list"></div>
+    </div>
+
+    <!-- SETUP TAB -->
+    <div class="tab-content" id="tab-setup">
+      <div class="tg-test">
+        <div class="card-title">Test Telegram connection</div>
+        <div class="card-desc" style="margin-top:4px">Enter your bot token and chat ID to verify delivery before running workflows. Sends a real test message from your browser.</div>
+        <div class="input-row">
+          <input class="input-field" id="tg-token" placeholder="Bot token: 7123456789:AAFabcXYZ..." />
+        </div>
+        <div class="input-row">
+          <input class="input-field" id="tg-chat" placeholder="Chat ID: 880173941" value="880173941" />
+          <button class="test-btn" onclick="testTelegram()">Send test ↗</button>
+        </div>
+        <div class="test-result" id="test-result"></div>
+      </div>
+
+      <div class="steps-card" style="margin-top:16px">
+        <div class="card-title">Add CI_PAT — Personal Access Token</div>
+        <div class="card-desc">Required for workflows to write scan results back to your repository.</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Open GitHub token settings</div>
+            <div class="step-desc">Go to GitHub → Settings → Developer Settings → Personal access tokens → Tokens (classic)</div>
+            <div class="step-code">https://github.com/settings/tokens</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Generate new token (classic)</div>
+            <div class="step-desc">Click "Generate new token (classic)". Name it "PKScreener CI". Set expiry: 1 year.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Select scopes: repo + workflow</div>
+            <div class="step-desc">Check: repo (all checkboxes), workflow. Then click Generate token and copy it immediately.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Add CI_PAT and REPO_URL to secrets</div>
+            <div class="step-desc">Go to fork → Settings → Secrets → Actions → New repository secret</div>
+            <div class="step-code">CI_PAT = &lt;paste your token&gt;</div>
+            <div class="step-code" style="margin-top:6px">REPO_URL = https://github.com/raj6ran/PKScreener</div>
+            <a href="https://github.com/raj6ran/PKScreener/settings/secrets/actions/new" target="_blank" class="run-link teal" style="margin-top:10px">Add secret on GitHub ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RUN ORDER TAB -->
+    <div class="tab-content" id="tab-order">
+      <div class="steps-card">
+        <div class="card-title">Daily run order — for best results</div>
+        <div class="card-desc">Run these in sequence every trading day. Once all secrets are set, the cron schedules handle this automatically.</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Download fresh OHLCV stock data</div>
+            <div class="step-desc">Downloads Open/High/Low/Close/Volume for all 2000+ NSE stocks. Must run before any scan. Takes ~5 min.</div>
+            <a href="https://github.com/raj6ran/PKScreener/actions/workflows/w9-workflow-download-data.yml" target="_blank" class="run-link teal">Run w9 → Download data ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Warm up data cache</div>
+            <div class="step-desc">Pre-processes stock data so scan workflows run 3x faster. Takes ~3 min.</div>
+            <a href="https://github.com/raj6ran/PKScreener/actions/workflows/w-data-warmup.yml" target="_blank" class="run-link teal">Run w-data-warmup ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Publish processed data</div>
+            <div class="step-desc">Makes data available to all scan workers in parallel. Takes ~2 min.</div>
+            <a href="https://github.com/raj6ran/PKScreener/actions/workflows/w-data-publisher.yml" target="_blank" class="run-link teal">Run w-data-publisher ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Run Nifty AI prediction</div>
+            <div class="step-desc">ML model predicts tomorrow's market direction — Gap Up / Gap Down / Sideways. Result sent to your Telegram. Takes ~11 min.</div>
+            <a href="https://github.com/raj6ran/PKScreener/actions/workflows/w4-workflow-prod-scans_1.yml" target="_blank" class="run-link blue">Run w4 → Nifty prediction ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">Trigger all stock scans</div>
+            <div class="step-desc">Fires all scan workflows in one click — breakouts, RSI, MACD, VCP, chart patterns across Nifty 50/100/500. Results sent to Telegram.</div>
+            <a href="https://github.com/raj6ran/PKScreener/actions/workflows/w7-workflow-prod-scans-trigger.yml" target="_blank" class="run-link amber">Run w7 → All scans ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <div class="step-title">Check your Telegram bot</div>
+            <div class="step-desc">Results arrive in @RAJESH_ALGO_bot (Chat ID: 880173941) within 10–15 minutes after step 5. You'll see stock names, signals, and indicators.</div>
+            <a href="https://t.me/RAJESH_ALGO_bot" target="_blank" class="run-link teal">Open Telegram bot ↗</a>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <div class="step-title">Auto-scheduling (set and forget)</div>
+            <div class="step-desc">All workflows have cron schedules. Once CI_PAT is added and working, everything runs automatically at market open (9:30am IST) and close (4pm IST) Monday–Friday.</div>
+            <div class="step-code">w4 cron: '55 9 * * 0-6'  →  3:25pm IST daily</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const BASE = "https://github.com/raj6ran/PKScreener/actions/workflows/";
+
+const workflows = [
+  {file:"w4-workflow-prod-scans_1.yml",name:"Nifty / Market AI prediction",cat:"scan",priority:"high",desc:"ML-based prediction of next day Nifty direction. Sends Gap-Up / Gap-Down / BTST signal to Telegram by 4pm IST.",schedule:"Daily 3:25pm IST"},
+  {file:"w7-workflow-prod-scans-trigger.yml",name:"Prod scans — master launcher",cat:"scan",priority:"high",desc:"One-click trigger for all production scans. Fires breakout, RSI, MACD, VCP and pattern scans in parallel.",schedule:"Manual / triggered"},
+  {file:"w6-workflow-prod-scans_AllInOne.yml",name:"All-in-one production scan",cat:"scan",priority:"high",desc:"Runs every scanner across Nifty 50, 100, 500. Consolidates results and sends to Telegram.",schedule:"Triggered by w7"},
+  {file:"w8-workflow-alert-scan_generic.yml",name:"Alert scan — generic",cat:"scan",priority:"high",desc:"Fast individual alert scanner. Screens for breakouts, RSI, MACD crossovers and sends instant Telegram alerts.",schedule:"Triggered"},
+  {file:"w5-workflow-prod-scans_Tests.yml",name:"Production scan tests",cat:"scan",priority:"med",desc:"Tests scan output correctness before publishing results. Validates stock signals against expected patterns.",schedule:"Manual"},
+  {file:"w12-workflow-backtests-trigger.yml",name:"Backtests trigger",cat:"scan",priority:"med",desc:"Triggers historical backtesting to validate strategy quality. Shows growth of 10,000 rupees per signal type.",schedule:"Manual"},
+  {file:"w13-workflow-backtest_generic.yml",name:"Backtest — generic runner",cat:"scan",priority:"med",desc:"Runs backtests for a specific scan strategy with configurable date range and index.",schedule:"Triggered"},
+  {file:"w16-workflow-hist-scans-trigger.yml",name:"Historical scans trigger",cat:"scan",priority:"low",desc:"Triggers historical scan jobs for past market data analysis and pattern validation.",schedule:"Manual"},
+  {file:"w3-workflow-bot.yml",name:"PKScreener Telegram bot",cat:"bot",priority:"high",desc:"Always-on Telegram bot. Send commands to @RAJESH_ALGO_bot to get live on-demand scan results anytime.",schedule:"Persistent"},
+  {file:"w20-workflow-alert-scanner-jobs-trigger.yaml",name:"Alert scanner jobs trigger",cat:"bot",priority:"high",desc:"Triggers the alert scanner worker pool for specific scan types on demand from Telegram.",schedule:"Triggered"},
+  {file:"w18-workflow-prod-barometer.yml",name:"Market barometer",cat:"bot",priority:"med",desc:"Sends daily market health score, advance-decline ratio and sector rotation analysis to Telegram.",schedule:"Daily"},
+  {file:"w19-workflow-alert-scanner-job-reset.yaml",name:"Alert scanner job reset",cat:"bot",priority:"low",desc:"Resets stuck or failed alert scanner jobs. Use this when bot stops responding to commands.",schedule:"Manual"},
+  {file:"w9-workflow-download-data.yml",name:"Download OHLCV data",cat:"data",priority:"high",desc:"Step 1: Downloads daily Open/High/Low/Close/Volume for all 2000+ NSE stocks. Must run before any scan.",schedule:"Daily 9am IST"},
+  {file:"w-data-publisher.yml",name:"Data publisher",cat:"data",priority:"high",desc:"Processes and publishes stock data so all scan workers can access it in parallel.",schedule:"Daily after download"},
+  {file:"w-data-warmup.yml",name:"Data warmup & cache",cat:"data",priority:"high",desc:"Pre-warms data cache for 3x faster scans. Run before triggering scan workflows.",schedule:"Daily"},
+  {file:"w-scan-worker-pool.yml",name:"Scan worker pool",cat:"data",priority:"high",desc:"Manages parallel scan workers. Enables simultaneous scanning across multiple indices.",schedule:"Triggered"},
+  {file:"w-local-candle-sync.yml",name:"Local candle sync",cat:"data",priority:"med",desc:"Syncs 1-min and 5-min intraday candle data for intraday monitoring and EMA-5 scans.",schedule:"Intraday"},
+  {file:"w15-workflow-pkkite-pickle.yml",name:"PKKite pickle data",cat:"data",priority:"med",desc:"Downloads and caches Kite broker tick data. Optional — only needed for Zerodha integration.",schedule:"Daily"},
+  {file:"w18-workflow-sub-data.yml",name:"Subscriber data sync",cat:"data",priority:"low",desc:"Syncs subscription user data. Only relevant if SUBSCRIPTION_ENABLED is set to 1.",schedule:"Daily"},
+  {file:"w0-workflow-ci-tests.yml",name:"CI tests",cat:"build",priority:"med",desc:"Runs unit and integration tests on every push. Validates scan logic, data parsing and Telegram output.",schedule:"On push"},
+  {file:"w1-workflow-build-matrix.yml",name:"Build matrix — multi-platform",cat:"build",priority:"med",desc:"Builds and tests PKScreener on Windows, Linux and macOS with Python 3.9 through 3.13.",schedule:"On push"},
+  {file:"w10-workflow-features-test.yml",name:"Features test",cat:"build",priority:"low",desc:"Tests specific feature flags and scanner option combinations in isolation.",schedule:"Manual"},
+  {file:"w10-workflow-generic.yml",name:"Generic workflow runner",cat:"build",priority:"low",desc:"Flexible workflow to run any pkscreener command. Good for debugging secrets and config issues.",schedule:"Manual"},
+  {file:"w11-workflow-test-coverage.yml",name:"Test coverage — full matrix",cat:"build",priority:"low",desc:"Generates code coverage across all platforms and uploads report to Coveralls.",schedule:"Manual"},
+  {file:"w11.1-workflow-test-coverage-UbuntuOnly.yml",name:"Test coverage — Ubuntu only",cat:"build",priority:"low",desc:"Faster single-platform coverage run for quick feedback during development.",schedule:"Manual"},
+  {file:"w2-workflow-python-publish.yml",name:"Publish to PyPI",cat:"build",priority:"low",desc:"Publishes a new pkscreener version to PyPI. Only run when releasing a new version tag.",schedule:"Manual"},
+  {file:"w15-docker-image.yml",name:"Build Docker image",cat:"build",priority:"low",desc:"Builds and pushes PKScreener Docker image to Docker Hub for containerized deployments.",schedule:"Manual"},
+  {file:"gh-pages-deployment.yml",name:"GitHub Pages deployment",cat:"util",priority:"high",desc:"Deploys scan result pages to GitHub Pages. Enable Pages in Settings to view results at raj6ran.github.io/PKScreener",schedule:"Auto on push"},
+  {file:"W17-ai-pr-reviewer.yml",name:"AI PR reviewer",cat:"util",priority:"low",desc:"Automatically reviews pull requests using AI and adds inline code review comments.",schedule:"On PR"},
+  {file:"w14-workflow-stale.yml",name:"Stale issue / PR cleanup",cat:"util",priority:"low",desc:"Marks and closes stale issues and pull requests after a period of inactivity.",schedule:"Daily"},
+];
+
+const secrets = [
+  {name:"TOKEN",status:"set",note:"Telegram bot API token"},
+  {name:"CHAT_ID",status:"set",note:"Your chat ID: 880173941"},
+  {name:"TOKEN_DEV",status:"set",note:"Same as TOKEN"},
+  {name:"CHAT_ID_DEV",status:"set",note:"Same as CHAT_ID"},
+  {name:"CHAT_ID_PROD",status:"set",note:"Same as CHAT_ID"},
+  {name:"CHAT_IDADMIN_DEV",status:"set",note:"Same as CHAT_ID"},
+  {name:"chat_idADMIN",status:"set",note:"Lowercase prefix — same value"},
+  {name:"SUBSCRIPTION_ENABLED",status:"set",note:"Set to 0 (free tier)"},
+  {name:"GITHUB_TOKEN",status:"set",note:"Auto-provided by GitHub Actions"},
+  {name:"CI_PAT",status:"missing",note:"GitHub Personal Access Token → repo + workflow scopes"},
+  {name:"REPO_URL",status:"missing",note:"https://github.com/raj6ran/PKScreener"},
+  {name:"TURSO_TOKEN",status:"optional",note:"Database token — leave blank"},
+  {name:"KTOKEN",status:"optional",note:"Zerodha Kite — optional"},
+  {name:"KUSER",status:"optional",note:"Zerodha user — optional"},
+  {name:"KPWD",status:"optional",note:"Zerodha password — optional"},
+  {name:"Tel_API_ID",status:"optional",note:"Telethon API — optional"},
+  {name:"Tel_API_Hash",status:"optional",note:"Telethon hash — optional"},
+  {name:"BBTOKEN",status:"optional",note:"Backup bot token — optional"},
+];
+
+const catLabels = {scan:"Stock scans",bot:"Bot & alerts",data:"Data pipelines",build:"Build & CI",util:"Utilities"};
+const catOrder = {scan:0,bot:1,data:2,build:3,util:4};
+const catIcons = {scan:"📈",bot:"🤖",data:"💾",build:"🔧",util:"⚙️"};
+let currentCat = 'all', currentSearch = '';
+
+function filterCat(cat, el) {
+  currentCat = cat;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  renderWF();
+}
+
+function searchWF(val) {
+  currentSearch = val.toLowerCase();
+  renderWF();
+}
+
+function renderWF() {
+  let filtered = workflows;
+  if (currentCat !== 'all') filtered = filtered.filter(w => w.cat === currentCat);
+  if (currentSearch) filtered = filtered.filter(w => w.name.toLowerCase().includes(currentSearch) || w.desc.toLowerCase().includes(currentSearch));
+  document.getElementById('wf-title').textContent = (currentCat === 'all' ? 'All workflows' : catLabels[currentCat]) + ' (' + filtered.length + ')';
+
+  const groups = {};
+  filtered.forEach(w => { if (!groups[w.cat]) groups[w.cat] = []; groups[w.cat].push(w); });
+  const cats = Object.keys(groups).sort((a,b) => catOrder[a]-catOrder[b]);
+
+  let html = '';
+  cats.forEach(cat => {
+    html += '<div class="sec-header"><div class="sec-icon" style="background:rgba(255,255,255,0.04)">' + catIcons[cat] + '</div><div class="sec-name">' + catLabels[cat] + '</div><div class="sec-count">' + groups[cat].length + ' workflows</div></div><div class="wf-grid">';
+    groups[cat].forEach(w => {
+      html += '<a class="wf-card cat-' + w.cat + '" href="' + BASE + w.file + '" target="_blank">' +
+        '<div class="wf-header"><div class="wf-name">' + w.name + '</div>' +
+        '<div class="wf-badges"><span class="badge badge-' + w.cat + '">' + catLabels[w.cat] + '</span>' +
+        (w.priority==='high' ? '<span class="badge badge-high">priority</span>' : '') +
+        (w.priority==='med' ? '<span class="badge badge-med">optional</span>' : '') +
+        '</div></div>' +
+        '<div class="wf-desc">' + w.desc + '</div>' +
+        '<div class="wf-footer"><span class="wf-schedule">' + w.schedule + '</span><span class="wf-run">Open workflow ↗</span></div>' +
+        '</a>';
+    });
+    html += '</div>';
+  });
+  if (!html) html = '<div style="color:var(--muted);font-size:13px;padding:20px 0">No workflows match your search.</div>';
+  document.getElementById('wf-output').innerHTML = html;
+}
+
+function renderSecrets() {
+  let html = '';
+  secrets.forEach(s => {
+    const tag = s.status === 'set' ? 'Set ✓' : s.status === 'missing' ? 'Missing ✗' : 'Optional';
+    html += '<div class="secret-item"><div class="secret-status ' + s.status + '"></div><div style="flex:1"><div class="secret-name">' + s.name + '</div><div class="secret-note">' + s.note + '</div></div><div class="secret-tag ' + s.status + '">' + tag + '</div></div>';
+  });
+  document.getElementById('secrets-list').innerHTML = html;
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+function toggleCheck(el) {
+  if (el.classList.contains('done')) {
+    el.classList.remove('done'); el.classList.add('todo'); el.textContent = '';
+    el.parentElement.querySelector('.check-label').classList.remove('done-text');
+  } else {
+    el.classList.remove('todo'); el.classList.add('done'); el.textContent = '✓';
+    el.parentElement.querySelector('.check-label').classList.add('done-text');
+  }
+}
+
+async function testTelegram() {
+  const token = document.getElementById('tg-token').value.trim();
+  const chat = document.getElementById('tg-chat').value.trim();
+  const res = document.getElementById('test-result');
+  if (!token || !chat) { res.style.display='block'; res.className='test-result err'; res.textContent='Please enter both token and chat ID.'; return; }
+  res.style.display='block'; res.className='test-result ok'; res.textContent='Sending message...';
+  try {
+    const r = await fetch('https://api.telegram.org/bot'+token+'/sendMessage?chat_id='+chat+'&text='+encodeURIComponent('PKScreener dashboard test ✅\n\nYour bot is working correctly! Workflow results will be sent here.'));
+    const d = await r.json();
+    if (d.ok) { res.className='test-result ok'; res.textContent='Message sent successfully! Check your Telegram bot now.'; }
+    else { res.className='test-result err'; res.textContent='Error: ' + (d.description || 'Check your token and chat ID.'); }
+  } catch(e) { res.className='test-result err'; res.textContent='Network error. Check your token format.'; }
+}
+
+function downloadPage() {
+  const blob = new Blob([document.documentElement.outerHTML], {type:'text/html'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'pkscreener-dashboard.html'; a.click();
+}
+
+renderWF();
+renderSecrets();
+</script>
+</body>
+</html>
