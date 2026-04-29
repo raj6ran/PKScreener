@@ -64,6 +64,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted);margin-bottom:2px;transition:all .15s;border:1px solid transparent}
 .nav-item:hover{background:var(--surface2);color:var(--text)}
 .nav-item.active{background:rgba(0,212,170,0.08);border-color:rgba(0,212,170,0.18);color:var(--accent)}
+.sidebar{position:sticky;top:16px;z-index:10}
 .nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .nav-badge{margin-left:auto;font-size:10px;font-family:var(--mono);background:var(--surface2);padding:2px 6px;border-radius:8px;color:var(--muted)}
 
@@ -71,8 +72,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
 .tab{padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-content{display:none}
-.tab-content.active{display:block}
+.page-section{display:none}
+.page-section.active{display:block}
 
 /* CARDS */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
@@ -298,7 +299,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div>
 
     <!-- ===== LIVE RESULTS ===== -->
-    <div class="tab-content active" id="tab-results">
+    <div class="page-section active" id="tab-results">
       <div id="mkt-alert" class="alert alert-warn" style="display:none">
         ⚠️ <b>Market currently closed</b> — The scan step only runs when NSE is open (9:15am–3:30pm IST, Mon–Fri). Run w4 during market hours to get Telegram results.
       </div>
@@ -367,7 +368,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== WORKFLOWS ===== -->
-    <div class="tab-content" id="tab-workflows">
+    <div class="page-section" id="tab-workflows">
       <div class="content-header">
         <div class="content-title" id="wf-title">All workflows (29)</div>
         <div style="display:flex;gap:8px">
@@ -387,7 +388,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== TELEGRAM ===== -->
-    <div class="tab-content" id="tab-telegram">
+    <div class="page-section" id="tab-telegram">
       <div class="alert alert-success">
         ✅ <b>Your bot token and chat ID are confirmed working</b> — "Hello Rajesh" was delivered successfully. The issue is the scan step skips when market is closed.
       </div>
@@ -468,7 +469,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== DOCKER ===== -->
-    <div class="tab-content" id="tab-docker">
+    <div class="page-section" id="tab-docker">
       <div class="alert alert-info">
         ℹ️ Running PKScreener locally via Docker lets you see live scan results in your terminal without waiting for GitHub Actions market hours check.
       </div>
@@ -558,7 +559,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== SECRETS ===== -->
-    <div class="tab-content" id="tab-secrets">
+    <div class="page-section" id="tab-secrets">
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px">
         Manage at <a href="https://github.com/raj6ran/PKScreener/settings/secrets/actions" target="_blank" style="color:var(--accent)">Settings → Secrets → Actions ↗</a>
       </div>
@@ -566,7 +567,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== RUN ORDER ===== -->
-    <div class="tab-content" id="tab-runorder">
+    <div class="page-section" id="tab-runorder">
       <div class="card">
         <div class="card-title">Daily trading day run order</div>
         <div class="card-sub" style="margin-bottom:20px">Run in this exact sequence every trading day for best results</div>
@@ -632,7 +633,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <!-- ===== SCANNER GUIDE ===== -->
-    <div class="tab-content" id="tab-scanner">
+    <div class="page-section" id="tab-scanner">
       <div class="card">
         <div class="card-title">47+ Built-in scanners — from developer guide</div>
         <div class="card-sub">All available scan types you can run</div>
@@ -722,7 +723,7 @@ setInterval(tick,1000); tick();
 
 // Navigation
 function navTo(id, el) {
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll(".page-section").forEach(t=>t.classList.remove("active"));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   el.classList.add('active');
