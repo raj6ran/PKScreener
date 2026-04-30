@@ -357,13 +357,13 @@ jobs:
           
           # Save data with size validation
           if data:
-              data_size_mb = len(json.dumps(data).encode()) / (1024 * 1024)
+              data_size_mb = len(json.dumps(data, default=lambda o: o.isoformat() if hasattr(o,"isoformat") else str(o)).encode()) / (1024 * 1024)
               print(f"\n📊 Data size: {data_size_mb:.2f} MB")
               
               # Save compressed candles
               try:
                   with gzip.open("results/Data/candles_latest.json.gz", 'wt', encoding='utf-8') as f:
-                      json.dump(data, f)
+                      json.dump(data, f, default=lambda o: o.isoformat() if hasattr(o,"isoformat") else str(o))
                   gz_size = os.path.getsize("results/Data/candles_latest.json.gz")
                   print(f"✅ Saved candles_latest.json.gz ({(gz_size/(1024*1024)):.2f} MB)")
               except Exception as e:
@@ -372,7 +372,7 @@ jobs:
               # Save uncompressed ticks.json for compatibility
               try:
                   with open("results/Data/ticks.json", 'w') as f:
-                      json.dump(data, f)
+                      json.dump(data, f, default=lambda o: o.isoformat() if hasattr(o,"isoformat") else str(o))
                   json_size = os.path.getsize("results/Data/ticks.json")
                   print(f"✅ Saved ticks.json ({(json_size/(1024*1024)):.2f} MB)")
                   
