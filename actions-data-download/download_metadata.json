@@ -1,0 +1,10 @@
+{
+  "download_time": "2026-05-12T06:32:39Z",
+  "download_time_ist": "2026-05-12T12:02:39+05:30",
+  "daily_valid": 0,
+  "intraday_valid": 0,
+  "size_thresholds": {
+    "daily_mb": 23,
+    "intraday_mb": 0
+  }
+}
